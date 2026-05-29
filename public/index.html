@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TaskFlow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #09090b;
+      --surface:   #111113;
+      --surface2:  #18181b;
+      --border:    #27272a;
+      --border2:   #3f3f46;
+      --text:      #fafafa;
+      --muted:     #71717a;
+      --subtle:    #3f3f46;
+      --accent:    #6366f1;
+      --accent-h:  #4f46e5;
+      --green:     #22c55e;
+      --amber:     #f59e0b;
+      --red:       #ef4444;
+      --radius:    10px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── TOPBAR ───────────────────────── */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; height: 52px;
+      background: rgba(9,9,11,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 700; font-size: 15px; color: var(--text);
+    }
+    .logo-icon {
+      width: 26px; height: 26px; background: var(--accent);
+      border-radius: 7px; display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+    }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .pill {
+      font-size: 11px; padding: 3px 10px; border-radius: 20px;
+      border: 1px solid var(--border); color: var(--muted);
+      background: var(--surface2); cursor: default;
+    }
+    .pill.live { color: var(--green); border-color: #22c55e33; background: #22c55e0d; }
+    .pill.live::before { content: '● '; }
+
+    /* ── GUIDE BANNER ─────────────────── */
+    .guide-banner {
+      margin: 24px 28px 0;
+      background: linear-gradient(135deg, #6366f108, #6366f118);
+      border: 1px solid #6366f133;
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
+    }
+    .guide-steps { display: flex; gap: 28px; flex-wrap: wrap; }
+    .guide-step  { display: flex; align-items: flex-start; gap: 10px; }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-text strong { display: block; font-size: 12px; font-weight: 600; color: var(--text); }
+    .step-text span   { font-size: 11px; color: var(--muted); }
+    .btn-close-guide  {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 16px; line-height: 1; flex-shrink: 0;
+      padding: 2px 4px; border-radius: 4px;
+      transition: color .15s, background .15s;
+    }
+    .btn-close-guide:hover { color: var(--text); background: var(--border); }
+
+    /* ── MAIN ─────────────────────────── */
+    .main { max-width: 780px; margin: 0 auto; padding: 24px 28px 60px; }
+
+    /* ── STATS ────────────────────────── */
+    .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 24px; }
+    .stat {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+      cursor: default; transition: border-color .2s;
+    }
+    .stat:hover { border-color: var(--border2); }
+    .stat-label { font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: .4px; text-transform: uppercase; }
+    .stat-value { font-size: 28px; font-weight: 700; margin-top: 4px; line-height: 1; }
+    .stat.s-total  .stat-value { color: var(--accent); }
+    .stat.s-done   .stat-value { color: var(--green); }
+    .stat.s-pend   .stat-value { color: var(--amber); }
+    .stat.s-high   .stat-value { color: var(--red); }
+
+    /* ── ADD FORM ─────────────────────── */
+    .add-form {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+      margin-bottom: 20px;
+    }
+    .add-form-top {
+      display: flex; gap: 8px; align-items: center; margin-bottom: 10px;
+    }
+    .inp {
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); border-radius: 7px;
+      padding: 8px 12px; font-size: 13px; font-family: inherit;
+      outline: none; transition: border-color .2s;
+    }
+    .inp:focus { border-color: var(--accent); }
+    .inp::placeholder { color: var(--muted); }
+    .inp-title { flex: 1; }
+    .inp-desc  { flex: 1.2; }
+    .add-form-bottom { display: flex; align-items: center; justify-content: space-between; }
+    .priority-group { display: flex; gap: 6px; }
+    .pri-btn {
+      padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); cursor: pointer; transition: all .15s;
+    }
+    .pri-btn:hover        { border-color: var(--border2); color: var(--text); }
+    .pri-btn.sel-high     { background: #ef444415; border-color: #ef444455; color: var(--red); }
+    .pri-btn.sel-medium   { background: #f59e0b15; border-color: #f59e0b55; color: var(--amber); }
+    .pri-btn.sel-low      { background: #22c55e15; border-color: #22c55e55; color: var(--green); }
+    .hint { font-size: 11px; color: var(--subtle); }
+
+    .btn-primary {
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 7px; padding: 8px 18px; font-size: 13px;
+      font-weight: 600; cursor: pointer; font-family: inherit;
+      transition: background .15s, transform .1s;
+    }
+    .btn-primary:hover  { background: var(--accent-h); }
+    .btn-primary:active { transform: scale(.97); }
+
+    /* ── TOOLBAR ──────────────────────── */
+    .toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .filters { display: flex; gap: 4px; }
+    .filter-btn {
+      padding: 5px 13px; border-radius: 6px; border: 1px solid transparent;
+      background: transparent; color: var(--muted);
+      font-size: 12px; font-weight: 500; cursor: pointer; font-family: inherit;
+      transition: all .15s;
+    }
+    .filter-btn:hover  { background: var(--surface2); color: var(--text); }
+    .filter-btn.active { background: var(--surface2); border-color: var(--border); color: var(--text); }
+    .sort-group { display: flex; align-items: center; gap: 6px; }
+    .sort-label { font-size: 11px; color: var(--muted); }
+    .btn-sort {
+      font-size: 11px; padding: 4px 10px; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--surface2);
+      color: var(--muted); cursor: pointer; font-family: inherit;
+      transition: all .15s;
+    }
+    .btn-sort:hover  { color: var(--text); border-color: var(--border2); }
+    .btn-sort.active { color: var(--text); border-color: var(--border2); background: var(--border); }
+
+    /* ── TASK LIST ────────────────────── */
+    #task-list { display: flex; flex-direction: column; gap: 6px; }
+
+    .task-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px;
+      transition: border-color .2s, opacity .2s, background .15s;
+      cursor: default;
+    }
+    .task-card:hover { border-color: var(--border2); background: var(--surface2); }
+    .task-card.done  { opacity: .45; }
+
+    .check-btn {
+      width: 18px; height: 18px; border-radius: 5px;
+      border: 1.5px solid var(--subtle); background: transparent;
+      cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s; position: relative;
+    }
+    .check-btn:hover { border-color: var(--green); background: #22c55e11; }
+    .check-btn.checked { background: var(--green); border-color: var(--green); }
+    .check-btn.checked::after {
+      content: '';
+      width: 4px; height: 7px;
+      border: 2px solid #fff; border-top: none; border-left: none;
+      transform: rotate(45deg) translate(-1px,-1px);
+      display: block;
+    }
+
+    .task-body { flex: 1; min-width: 0; }
+    .task-title {
+      font-size: 13.5px; font-weight: 500; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .task-desc {
+      font-size: 12px; color: var(--muted); margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .task-card.done .task-title { text-decoration: line-through; color: var(--muted); }
+
+    .pri-badge {
+      font-size: 10px; font-weight: 600; padding: 2px 9px;
+      border-radius: 20px; letter-spacing: .4px; text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .pri-badge.high   { background: #ef444412; color: var(--red);   border: 1px solid #ef444430; }
+    .pri-badge.medium { background: #f59e0b12; color: var(--amber); border: 1px solid #f59e0b30; }
+    .pri-badge.low    { background: #22c55e12; color: var(--green); border: 1px solid #22c55e30; }
+
+    .task-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+    .task-card:hover .task-actions { opacity: 1; }
+    .action-btn {
+      width: 28px; height: 28px; border-radius: 6px;
+      border: 1px solid transparent; background: transparent;
+      color: var(--muted); cursor: pointer; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s;
+    }
+    .action-btn:hover         { background: var(--surface); border-color: var(--border); color: var(--text); }
+    .action-btn.del:hover     { background: #ef444412; border-color: #ef444430; color: var(--red); }
+
+    /* ── EMPTY ────────────────────────── */
+    .empty {
+      text-align: center; padding: 48px 20px; color: var(--muted);
+    }
+    .empty-icon { font-size: 32px; margin-bottom: 10px; }
+    .empty h3   { font-size: 14px; font-weight: 500; color: var(--subtle); margin-bottom: 4px; }
+    .empty p    { font-size: 12px; }
+
+    /* ── TOAST ────────────────────────── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      color: var(--text); padding: 10px 16px; border-radius: var(--radius);
+      font-size: 13px; font-weight: 500;
+      transform: translateY(60px); opacity: 0;
+      transition: all .25s; pointer-events: none; z-index: 999;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ── PROGRESS BAR ─────────────────── */
+    .progress-bar-wrap {
+      height: 3px; background: var(--surface2);
+      border-radius: 2px; overflow: hidden; margin-bottom: 20px;
+    }
+    .progress-bar-fill {
+      height: 100%; background: linear-gradient(90deg, var(--accent), var(--green));
+      border-radius: 2px; transition: width .5s ease;
+    }
+
+    @media (max-width: 600px) {
+      .stats   { grid-template-columns: repeat(2,1fr); }
+      .topbar  { padding: 0 16px; }
+      .main    { padding: 16px; }
+      .guide-steps { gap: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    TaskFlow
+  </div>
+  <div class="topbar-right">
+    <span class="pill">CI/CD Demo</span>
+    <span class="pill live" id="health-pill">Checking</span>
+  </div>
+</header>
+
+<!-- HOW TO USE GUIDE -->
+<div class="guide-banner" id="guide-banner">
+  <div class="guide-steps">
+    <div class="guide-step">
+      <div class="step-num">1</div>
+      <div class="step-text">
+        <strong>Add a Task</strong>
+        <span>Type title → pick priority → click Add</span>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">2</div>
+      <div class="step-text">
+        <strong>Complete It</strong>
+        <span>Click the checkbox on the left</span>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">3</div>
+      <div class="step-text">
+        <strong>Filter & Sort</strong>
+        <span>Use tabs below to filter tasks</span>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">4</div>
+      <div class="step-text">
+        <strong>Delete</strong>
+        <span>Hover a task → click 🗑 icon</span>
+      </div>
+    </div>
+  </div>
+  <button class="btn-close-guide" onclick="closeGuide()" title="Dismiss">✕</button>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat s-total"><div class="stat-label">Total</div><div class="stat-value" id="s-total">0</div></div>
+    <div class="stat s-done" ><div class="stat-label">Done</div> <div class="stat-value" id="s-done">0</div></div>
+    <div class="stat s-pend" ><div class="stat-label">Pending</div><div class="stat-value" id="s-pend">0</div></div>
+    <div class="stat s-high" ><div class="stat-label">High Priority</div><div class="stat-value" id="s-high">0</div></div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+  </div>
+
+  <!-- ADD FORM -->
+  <div class="add-form">
+    <div class="add-form-top">
+      <input class="inp inp-title" id="inp-title" placeholder="What needs to be done?" />
+      <input class="inp inp-desc"  id="inp-desc"  placeholder="Add a description..." />
+    </div>
+    <div class="add-form-bottom">
+      <div>
+        <div class="priority-group" id="priority-group">
+          <button class="pri-btn" data-p="high"   onclick="selectPriority('high',this)">🔴 High</button>
+          <button class="pri-btn sel-medium" data-p="medium" onclick="selectPriority('medium',this)">🟡 Medium</button>
+          <button class="pri-btn" data-p="low"    onclick="selectPriority('low',this)">🟢 Low</button>
+        </div>
+        <div class="hint" style="margin-top:6px;">Press <kbd style="background:var(--border);padding:1px 5px;border-radius:4px;font-size:10px;">Enter</kbd> to quickly add</div>
+      </div>
+      <button class="btn-primary" onclick="addTask()">+ Add Task</button>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="filters">
+      <button class="filter-btn active" data-f="all"       onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn"        data-f="pending"   onclick="setFilter('pending',this)">Pending</button>
+      <button class="filter-btn"        data-f="completed" onclick="setFilter('completed',this)">Completed</button>
+      <button class="filter-btn"        data-f="high"      onclick="setFilter('high',this)">🔴 High</button>
+    </div>
+    <div class="sort-group">
+      <span class="sort-label">Sort:</span>
+      <button class="btn-sort active" data-s="newest" onclick="setSort('newest',this)">Newest</button>
+      <button class="btn-sort"        data-s="priority" onclick="setSort('priority',this)">Priority</button>
+    </div>
+  </div>
+
+  <!-- TASK LIST -->
+  <div id="task-list"></div>
+
+</main>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+  let tasks       = [];
+  let filter      = 'all';
+  let sortBy      = 'newest';
+  let selectedPri = 'medium';
+
+  // ── Priority selector ─────────────────────────────
+  function selectPriority(p, btn) {
+    selectedPri = p;
+    document.querySelectorAll('.pri-btn').forEach(b => {
+      b.className = 'pri-btn';
+    });
+    btn.classList.add(`sel-${p}`);
+  }
+
+  // ── Toast ─────────────────────────────────────────
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2200);
+  }
+
+  // ── Guide banner ──────────────────────────────────
+  function closeGuide() {
+    document.getElementById('guide-banner').style.display = 'none';
+  }
+
+  // ── Load tasks ────────────────────────────────────
+  async function loadTasks() {
+    try {
+      const res  = await fetch('/api/tasks');
+      const json = await res.json();
+      tasks = json.data;
+      render();
+      updateStats();
+    } catch { toast('⚠️ Could not reach server'); }
+  }
+
+  // ── Render ────────────────────────────────────────
+  function render() {
+    let list = [...tasks];
+
+    if (filter === 'pending')   list = list.filter(t => !t.completed);
+    if (filter === 'completed') list = list.filter(t =>  t.completed);
+    if (filter === 'high')      list = list.filter(t => t.priority === 'high');
+
+    const priOrder = { high: 0, medium: 1, low: 2 };
+    if (sortBy === 'priority') list.sort((a,b) => priOrder[a.priority] - priOrder[b.priority]);
+    if (sortBy === 'newest')   list.sort((a,b) => b.id - a.id);
+
+    const el = document.getElementById('task-list');
+
+    if (!list.length) {
+      el.innerHTML = `
+        <div class="empty">
+          <div class="empty-icon">📭</div>
+          <h3>No tasks here</h3>
+          <p>${filter === 'all' ? 'Add your first task above' : 'Try a different filter'}</p>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = list.map(t => `
+      <div class="task-card ${t.completed ? 'done' : ''}">
+        <button class="check-btn ${t.completed ? 'checked' : ''}"
+                onclick="toggle(${t.id}, ${!t.completed})"
+                title="${t.completed ? 'Mark incomplete' : 'Mark complete'}">
+        </button>
+        <div class="task-body">
+          <div class="task-title">${escHtml(t.title)}</div>
+          ${t.description ? `<div class="task-desc">${escHtml(t.description)}</div>` : ''}
+        </div>
+        <span class="pri-badge ${t.priority}">${t.priority}</span>
+        <div class="task-actions">
+          <button class="action-btn del" onclick="del(${t.id})" title="Delete task">🗑</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Stats & progress ──────────────────────────────
+  function updateStats() {
+    const total = tasks.length;
+    const done  = tasks.filter(t =>  t.completed).length;
+    const pend  = tasks.filter(t => !t.completed).length;
+    const high  = tasks.filter(t => t.priority === 'high').length;
+    document.getElementById('s-total').textContent = total;
+    document.getElementById('s-done').textContent  = done;
+    document.getElementById('s-pend').textContent  = pend;
+    document.getElementById('s-high').textContent  = high;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    document.getElementById('progress-bar').style.width = pct + '%';
+  }
+
+  // ── Add ───────────────────────────────────────────
+  async function addTask() {
+    const title = document.getElementById('inp-title').value.trim();
+    const desc  = document.getElementById('inp-desc').value.trim();
+    if (!title) {
+      document.getElementById('inp-title').focus();
+      document.getElementById('inp-title').style.borderColor = 'var(--red)';
+      setTimeout(() => document.getElementById('inp-title').style.borderColor = '', 1200);
+      return;
+    }
+    await fetch('/api/tasks', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, description: desc, priority: selectedPri })
+    });
+    document.getElementById('inp-title').value = '';
+    document.getElementById('inp-desc').value  = '';
+    toast('✅ Task added');
+    loadTasks();
+  }
+
+  // ── Toggle complete ───────────────────────────────
+  async function toggle(id, completed) {
+    await fetch(`/api/tasks/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed })
+    });
+    toast(completed ? '✅ Marked complete' : '↩ Marked incomplete');
+    loadTasks();
+  }
+
+  // ── Delete ────────────────────────────────────────
+  async function del(id) {
+    await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+    toast('🗑 Task deleted');
+    loadTasks();
+  }
+
+  // ── Filter ────────────────────────────────────────
+  function setFilter(f, btn) {
+    filter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  }
+
+  // ── Sort ──────────────────────────────────────────
+  function setSort(s, btn) {
+    sortBy = s;
+    document.querySelectorAll('.btn-sort').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  }
+
+  // ── Health check ──────────────────────────────────
+  async function checkHealth() {
+    try {
+      const res  = await fetch('/health');
+      const json = await res.json();
+      const el   = document.getElementById('health-pill');
+      el.textContent = 'Live';
+      el.classList.add('live');
+    } catch {
+      document.getElementById('health-pill').textContent = 'Offline';
+    }
+  }
+
+  // ── Enter key ─────────────────────────────────────
+  ['inp-title','inp-desc'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') addTask();
+    });
+  });
+
+  // Init
+  loadTasks();
+  checkHealth();
+</script>
+</body>
+</html>
